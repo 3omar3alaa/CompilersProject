@@ -1,0 +1,19 @@
+1- Follow this link
+https://stackoverflow.com/questions/5456011/how-to-compile-lex-yacc-files-on-windows
+2- Not necessary to download gcc file (use "cc" command instead)
+3- To compile use the following commands
+flex hello.l //or lex hello.l
+bison -dy hello.y //or yacc -d hello.y
+cc lex.yy.c y.tab.c -o hello.exe
+
+##################################################
+=====To compile proj file======
+lex proj.l
+yacc -d proj.y
+cc lex.yy.c proj.tab.c proj.c -o proj.exe
+proj < input.txt
+
+lex proj.l 	==> produces lex.yy.c
+yacc -d proj.y 	==> produces proj.tab.h and proj.tab.c
+
+lex -d proj.l  	==> -d enables debuagging
