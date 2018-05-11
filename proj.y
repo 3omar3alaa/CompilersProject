@@ -9,8 +9,15 @@
 
 int yylex(void);
 int varType;
+int valType;
+int varKind;
+int funcType; 			/* Function Type */
+int scope = 0;
+int oprVarType; 		/* get type of variable when it is an operand */
+int currValType; 		/* to save the value of left operand in mathematical expression */
 void yyerror(char *s);
 int sym[26];                    /* symbol table */
+enum {VAR, CONSTANT, FUNCTION , PARAMETER} kind;
 %}
 
 %union {
@@ -53,11 +60,11 @@ function:
         ;
 
 func:
-	      types VARIABLE '(' params ')' '{' func_body RETURN expr ';' '}'					{ printf("Func\n"); }
+	      types { funcType = varType; } VARIABLE '(' params ')' '{' { scope++; } func_body RETURN expr ';' '}'		{ printf("Func\n"); varKind = FUNCTION; scope--; declare($3,funcType,-1,varKind); }
 		  
 params:
-		  types VARIABLE ',' params															{ printf("Params\n"); }
-		| types VARIABLE																	{ printf("Params\n"); }
+		  types VARIABLE ',' params															{ printf("Params\n"); varKind = PARAMETER;}
+		| types VARIABLE																	{ printf("Params\n"); varKind = PARAMETER;}
 		|																					{ printf("Params: empty\n"); }
 		;
 		
@@ -77,10 +84,10 @@ stmt:
           ';'                            													{ printf("Stmt: \n"); }
         | expr ';'                       													{ printf("Stmt: print expr\n");}
         | PRINT expr ';'                 													{ printf("Stmt: expr\n"); }
-        | VARIABLE '=' expr ';'          													{ printf("Stmt: var %s = expr \n",$1); }
-		| types VARIABLE ';'																{ printf("Stmt: Variable Declaration\n"); }
-		| types VARIABLE '=' expr ';'          												{ printf("Stmt: var %s = expr\n", $2); declare($2,varType);}
-		| CONST types VARIABLE '=' values ';' 												{ printf("Stmt: CONST VARIABLE\n");}
+        | VARIABLE '=' expr ';'          													{ printf("Stmt: Variable Assignment: var %s = expr \n",$1); varKind = VAR; assign($1, valType);}
+		| types VARIABLE ';'																{ printf("Stmt: Variable Declaration \n"); varKind = VAR; declare($2,varType,-1, varKind);}
+		| types VARIABLE '=' expr ';'          												{ printf("Stmt: var %s = expr\n", $2); varKind = VAR; declare($2,varType,valType,varKind); }
+		| CONST types VARIABLE '=' values ';' 												{ printf("Stmt: CONST VARIABLE\n"); varKind = CONSTANT; declare($3,varType,valType,varKind);}
 		| VARIABLE '(' func_call_params ')' 												{ printf("Expr: Function Call Params\n"); }
 		| types VARIABLE '=' VARIABLE '(' func_call_params ')' 								{ printf("Expr: Function Call Params\n"); }
 		| VARIABLE '=' VARIABLE '(' func_call_params ')' 									{ printf("Expr: Function Call Params\n"); }
@@ -109,31 +116,31 @@ switch_case:
 		;
 
 values:
-		  INTEGER																			{ printf("Values: INTEGER %d\n",$1); }
-		| FLOAT																				{ printf("Values: FLOAT %f\n",$1); 	}
-		| CHAR																				{ printf("Values: CHAR %s\n",$1); 	}
-		| STRING																			{ printf("Values: STRING %s\n",$1); 	}
+		  INTEGER																			{ printf("Values: INTEGER %d\n",$1); 	valType = 0;}
+		| FLOAT																				{ printf("Values: FLOAT %f\n",$1); 		valType = 1;}
+		| CHAR																				{ printf("Values: CHAR %s\n",$1); 		valType = 2;}
+		| STRING																			{ printf("Values: STRING %s\n",$1); 	valType = 3;}
 		;
 types:
-		  INT																				{ printf("Types: INT %s\n"); varType = 0;}
-		| FLOAT																				{ printf("Types: FLOAT\n"); varType = 1;}
-		| CHAR																				{ printf("Types: CHAR\n"); varType = 2;}
-		| STRING																			{ printf("Types: STRING\n"); varType = 3;}
+		  INT																				{ printf("Types: INT \n"); 		varType = 0;}
+		| FLOAT																				{ printf("Types: FLOAT\n"); 	varType = 1;}
+		| CHAR																				{ printf("Types: CHAR\n"); 		varType = 2;}
+		| STRING																			{ printf("Types: STRING\n"); 	varType = 3;}
 		;
 
 expr:
-          values																			{ printf("Expr: Values\n"); }
-        | VARIABLE              															{ printf("Expr: var %s\n", $1); }
-        | expr '+' expr         
-        | expr '-' expr         
-        | expr '*' expr         
-        | expr '/' expr         
-        | expr '<' expr         
-        | expr '>' expr         
-        | expr GE expr          
-        | expr LE expr          
-        | expr NE expr          
-        | expr EQ expr          
+          values																			{ printf("Expr: Values\n"); oprVarType = valType;}
+        | VARIABLE              															{ printf("Expr: var %s\n", $1); oprVarType = getType($1);}
+        | expr { currValType = oprVarType;} '+' expr { valType = compare(currValType, oprVarType);}         
+        | expr { currValType = oprVarType;} '-' expr { valType = compare(currValType, oprVarType);}         
+        | expr { currValType = oprVarType;} '*' expr { valType = compare(currValType, oprVarType);}         
+        | expr { currValType = oprVarType;} '/' expr { valType = compare(currValType, oprVarType);}        
+        | expr { currValType = oprVarType;} '<' expr { valType = compare(currValType, oprVarType);}         
+        | expr { currValType = oprVarType;} '>' expr { valType = compare(currValType, oprVarType);}         
+        | expr { currValType = oprVarType;} GE  expr { valType = compare(currValType, oprVarType);}          
+        | expr { currValType = oprVarType;} LE  expr { valType = compare(currValType, oprVarType);}        
+        | expr { currValType = oprVarType;} NE  expr { valType = compare(currValType, oprVarType);}          
+        | expr { currValType = oprVarType;} EQ  expr { valType = compare(currValType, oprVarType);}          
         ;
 
 bool_expr:
