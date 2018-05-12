@@ -65,7 +65,7 @@ function:
         ;
 
 func:
-	      types { funcType = varType; } VARIABLE '(' params ')' openScope { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ printf("Func\n"); varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); }
+	      types { funcType = varType; } VARIABLE '(' params ')' openScope { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ printf("Func\n"); varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); checkReturnType(funcType, oprVarType); }
 
 openScope:
 		 '{' 																				{ scopeCount++; printf("Scope Opened %d\n",scopeCount); openScope(scopeCount, &pScope);}
@@ -74,8 +74,8 @@ closeScope:
 		 '}'																				{ printf("Scope Closed %d\n",scopeCount); closeScope(&pScope);}
 		; 
 params:
-		  types VARIABLE ',' params															{ printf("Params\n"); varKind = PARAMETER;}
-		| types VARIABLE																	{ printf("Params\n"); varKind = PARAMETER;}
+		  types VARIABLE ',' params															{ printf("Params\n"); varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
+		| types VARIABLE																	{ printf("Params\n"); varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
 		|																					{ printf("Params: empty\n"); }
 		;
 		
@@ -164,8 +164,8 @@ bool_expr:
         | bool_expr  AND { currBoolType = varBoolType; } bool_expr  						{ printf("Bool_Expr: And\n"); 					boolExprValidation(currBoolType,varBoolType);}
         | bool_expr  OR  { currBoolType = varBoolType; } bool_expr  						{ printf("Bool_Expr: Or\n"); 					boolExprValidation(currBoolType,varBoolType);}
         | bool_expr  XOR { currBoolType = varBoolType; } bool_expr    						{ printf("Bool_Expr: Xor\n");					boolExprValidation(currBoolType,varBoolType);}	
-		| values 																			{ printf("Bool_Expr: Values\n"); 					varBoolType = valType; }
-		| VARIABLE																			{ printf("Bool_Expr: Var\n"); 						varBoolType = getTypeBoolExpr($1); }
+		| values 																			{ printf("Bool_Expr: Values\n"); 				varBoolType = valType; }
+		| VARIABLE																			{ printf("Bool_Expr: Var\n"); 					varBoolType = getTypeBoolExpr($1); }
 		;
 
 %%

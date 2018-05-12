@@ -23,6 +23,7 @@ int getTypeBoolExpr(char* varName);	//returns the type of a variable inside a bo
 struct Node *find_Var(char* varName);
 int compare (int leftOpr, int rightOpr);
 void openScope(int scopeCount, int *pScope);
+void checkReturnType(int funcType, int returnType);
 int compareScopes(int currVarScope, int oprVarScope);
 void assign(char* varName, int valType, int operandsScope);
 void boolExprValidation (int leftOprType, int rightOprType);
@@ -150,6 +151,12 @@ void boolExprValidation (int leftOprType, int rightOprType)
 		printf("Bool Expression: Invalid Operands Types left: %d\tright:%d\n",leftOprType,rightOprType);
 		yyerror("Bool Expression: Invalid Operands Types left: %d\t\t right:%d");
 	}
+}
+
+void checkReturnType(int funcType, int returnType)
+{
+	if(funcType != returnType)
+		yyerror("Function Return Type Mismatch");
 }
 
 int getScope(char* varName)
