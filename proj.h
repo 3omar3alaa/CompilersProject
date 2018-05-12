@@ -1,13 +1,17 @@
+#include <stdbool.h>
 typedef enum { typeCon, typeId, typeOpr } nodeEnum;
 
 /* constants */
 typedef struct {
+	bool isChar;
     int value;                  /* value of constant */
+	char* char_value;                  /* value of constant in char */
 } conNodeType;
 
 /* identifiers */
 typedef struct {
-    int i;                      /* subscript to sym array */
+    //int i;                      /* subscript to sym array */
+	char* name; 					/* string name*/
 } idNodeType;
 
 /* operators */
