@@ -28,43 +28,56 @@ int compareScopes(int currVarScope, int oprVarScope);
 void assign(char* varName, int valType, int operandsScope);
 void boolExprValidation (int leftOprType, int rightOprType);
 void declare(char* varName, int varType, int valType, int varKind, int scope, int operandsScope); 
+void addVariable (char* varName, int varType, int valType, int varKind, int scope, int operandsScope);
 
+void addVariable (char* varName, int varType, int valType, int varKind, int scope, int operandsScope)
+{
+	if (varType == valType || valType == -1) //if its type and value are equal then add it OR declared with no assignment
+	{
+		if( (varKind == 0 && compareScopes(scope,operandsScope) != -1) || varKind != 0) //scopes are matching OR anything but variable, then add directly to the symbol table
+		{
+			struct Node *s;
+			printf("varName %s, varType %d, varKind %d\n",varName,varType,varKind);
+			s = malloc(sizeof(struct Node));
+			s->id = varName;
+			s->varType = varType;
+			s->varKind = varKind;
+			if(valType == -1)
+				s->hasValue = 0;
+			else
+				s->hasValue = 1;
+			s-> scope = scope;
+			HASH_ADD_KEYPTR(hh, symbolTable, s->id, strlen(s->id), s);  //id is the parameter to be the key
+			printSymbolTable();
+		}
+		else
+		{
+			yyerror("Invalid Scope");
+		}
+	}
+	else
+	{
+		yyerror("Invalid Type");
+	}
+}
 
 void declare(char* varName, int varType, int valType, int varKind, int scope, int operandsScope) //should not compare scope and operandsScope in case of function/constants/parameters
 {
 	struct Node *s = find_Var(varName);
 	if(s == NULL) //if variable not declared before then add it
 	{
-		if (varType == valType || valType == -1) //if its type and value are equal then add it OR declared with no assignment
-		{
-			if( (varKind == 0 && compareScopes(scope,operandsScope) != -1) || varKind != 0) //scopes are matching OR anything but variable, then add directly to the symbol table
-			{
-				printf("varName %s, varType %d, varKind %d\n",varName,varType,varKind);
-				s = malloc(sizeof(struct Node));
-				s->id = varName;
-				s->varType = varType;
-				s->varKind = varKind;
-				if(valType == -1)
-					s->hasValue = 0;
-				else
-					s->hasValue = 1;
-				s-> scope = scope;
-				HASH_ADD_KEYPTR(hh, symbolTable, s->id, strlen(s->id), s);  //id is the parameter to be the key
-				printSymbolTable();
-			}
-			else
-			{
-				yyerror("Invalid Scope");
-			}
-		}
-		else
-		{
-			yyerror("Invalid Type");
-		}
+		addVariable(varName,varType,valType,varKind,scope,operandsScope);
 	}
 	else 
 	{
-		yyerror("Multiple Declaration");
+		if( s->scope != scope || s->varType != varType ) //if same variable already declared but in different scope then add it OR has diferent type
+		{
+			addVariable(varName,varType,valType,varKind,scope,operandsScope);
+		}
+		else //if the variable is already declared in the same scope then print error
+		{
+			yyerror("Multiple Declaration");
+		}
 	}
 }
 
@@ -89,6 +102,7 @@ void assign(char* varName, int valType, int operandsScope)
 		yyerror("Variable Not declared before");
 	}
 }
+
 struct Node *find_Var(char* varName) 
 {
     struct Node *s;

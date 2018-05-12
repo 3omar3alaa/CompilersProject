@@ -65,10 +65,11 @@ function:
         ;
 
 func:
-	      types { funcType = varType; } VARIABLE '(' params ')' openScope { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ printf("Func\n"); varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); checkReturnType(funcType, oprVarType); }
+	      types { funcType = varType; } VARIABLE openScope params ')' '{' { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ printf("Func\n"); varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); checkReturnType(funcType, oprVarType); }
 
 openScope:
 		 '{' 																				{ scopeCount++; printf("Scope Opened %d\n",scopeCount); openScope(scopeCount, &pScope);}
+		|'(' 																				{ scopeCount++; printf("Scope Opened %d\n",scopeCount); openScope(scopeCount, &pScope);}
 		;
 closeScope:
 		 '}'																				{ printf("Scope Closed %d\n",scopeCount); closeScope(&pScope);}
@@ -141,17 +142,17 @@ types:
 
 expr:
           values																			{ printf("Expr: Values\n"); oprVarType = valType; currVarScope = pScope;}
-        | VARIABLE              															{ printf("Expr: var %s\n", $1); oprVarType = getType($1); oprVarScope = getScope($1); printf("operand %s  oprVarType %d\n",$1, oprVarType);}
-        | expr  '+' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
-        | expr  '-' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
-        | expr  '*' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
-        | expr  '/' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}        
-        | expr  '<' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
-        | expr  '>' { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
-        | expr  GE  { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
-        | expr  LE  { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}        
-        | expr  NE  { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
-        | expr  EQ  { currValType = oprVarType; currVarScope = oprVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
+        | VARIABLE              															{ printf("Expr: var %s\n", $1); oprVarType = getType($1); currVarScope = getScope($1); printf("operand %s  oprVarType %d\n",$1, oprVarType);}
+        | expr  '+' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
+        | expr  '-' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
+        | expr  '*' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
+        | expr  '/' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}        
+        | expr  '<' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
+        | expr  '>' { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}         
+        | expr  GE  { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
+        | expr  LE  { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}        
+        | expr  NE  { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
+        | expr  EQ  { currValType = oprVarType; oprVarScope = currVarScope;} expr 			{ valType = compare(currValType, oprVarType); currVarScope = compareScopes(currVarScope,oprVarScope);}          
         ;
 
 bool_expr:
