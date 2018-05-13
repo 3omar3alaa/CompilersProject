@@ -1,7 +1,6 @@
 #include<string.h>
 #include "uthash.h"
 
-
 struct Node{
     const char* id;            	/* we'll use this field as the key */
 	int varType;			   	// int, float, string...etc 
@@ -11,8 +10,18 @@ struct Node{
     //char name[10];             
     UT_hash_handle hh; /* makes this structure hashable */
 };
+
+typedef struct Stack Stack;
+struct Stack{
+  int counter;
+  int max;
+  void** container;
+};
+
 struct Node *symbolTable = NULL;
-int parent_Scope_Arr[100] = { 0 }; //First element has parent scope equal 1
+int parent_Scope_Arr[100] = { 0 }; //First element has parent scope equal 0
+
+
 //Prototypes
 void yyerror(char *s);
 void printSymbolTable();
@@ -29,6 +38,13 @@ void assign(char* varName, int valType, int operandsScope);
 void boolExprValidation (int leftOprType, int rightOprType);
 void declare(char* varName, int varType, int valType, int varKind, int scope, int operandsScope); 
 void addVariable (char* varName, int varType, int valType, int varKind, int scope, int operandsScope);
+
+
+//Stack Functions 
+Stack* newStack(int size);
+void push(void* item, Stack* stack);
+void* pop(Stack* stack);
+
 
 void addVariable (char* varName, int varType, int valType, int varKind, int scope, int operandsScope)
 {
@@ -88,9 +104,10 @@ void assign(char* varName, int valType, int operandsScope)
 	{
 		int varType = s->varType;
 		int scope = s->scope;
-		printf("The type of the variable is %d\n",varType);
+		printf("Assign: varName %s Type %d\n",varName,varType);
 		if(varType != valType || compareScopes(scope,operandsScope)==-1)
 		{
+			s->hasValue = 0;
 			yyerror("Not equal val and type values OR Invalid Scope\n");
 			return;
 		}
@@ -295,4 +312,41 @@ void printSymbolTable()
 	{
 		printf("index %d\t\tparent %d\n",i,parent_Scope_Arr[i]);
 	}*/
+}
+
+
+Stack* newStack(int size){
+  /* NYI: better error checks */
+  if (size < 5){
+    size = 5;
+  }
+ 
+  Stack* stack = malloc(sizeof(Stack));
+  stack->container = malloc(sizeof(void**) * size);
+ 
+  stack->counter = 0;
+  stack->max = size;
+  printf("Stack created successfully\n");
+  return stack;
+}
+ 
+void push(void* item, Stack* stack)
+{
+  printf("In Push\n");		
+  stack->container[stack->counter] = item;
+  stack->counter++;
+  printf("Stack: Pushed Value %d\n",*(int*)item);
+}
+ 
+void* pop(Stack* stack)
+{
+  if (stack->counter > 0)
+  {
+	printf("In Pop\n");
+    stack->counter--;
+	printf("Stack: Popped Value %d\n",*(int*)(stack->container[stack->counter]));
+    return stack->container[stack->counter];
+  }
+  fprintf(stderr, "stack counter is 0... can't pop an empty stack.");
+  return NULL;
 }
