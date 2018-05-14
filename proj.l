@@ -5,7 +5,7 @@
 #include "proj.tab.h"
 void yyerror(char *);
 %}
-
+%option yylineno
 %%
 
 [0-9]+\.[0-9]+ 	{
@@ -66,11 +66,14 @@ void yyerror(char *);
                 yylval.varName = strdup(yytext);
                 return VARIABLE;
             }
-
+   
 [ \t\n]+        ;       /* ignore whitespace */
 
 .               yyerror("Unknown character");
 %%
 int yywrap(void) {
     return 1;
+}
+void yyerror(char *s) {
+    printf("\nError: Error in Line: %d\n%s ",yylineno,s);
 }

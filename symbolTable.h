@@ -53,7 +53,7 @@ void addVariable (char* varName, int varType, int valType, int varKind, int scop
 		if( (varKind == 0 && compareScopes(scope,operandsScope) != -1) || varKind != 0) //scopes are matching OR anything but variable, then add directly to the symbol table
 		{
 			struct Node *s;
-			printf("varName %s, varType %d, varKind %d\n",varName,varType,varKind);
+			printf("Info: varName %s, varType %d, varKind %d\n",varName,varType,varKind);
 			s = malloc(sizeof(struct Node));
 			s->id = varName;
 			s->varType = varType;
@@ -68,12 +68,12 @@ void addVariable (char* varName, int varType, int valType, int varKind, int scop
 		}
 		else
 		{
-			yyerror("Invalid Scope");
+			printf("Error: Invalid Scope\n");
 		}
 	}
 	else
 	{
-		yyerror("Invalid Type");
+		printf("Error: Invalid Type\n");
 	}
 }
 
@@ -92,7 +92,7 @@ void declare(char* varName, int varType, int valType, int varKind, int scope, in
 		}
 		else //if the variable is already declared in the same scope then print error
 		{
-			yyerror("Multiple Declaration");
+			printf("Error: Multiple Declaration\n");
 		}
 	}
 }
@@ -104,11 +104,12 @@ void assign(char* varName, int valType, int operandsScope)
 	{
 		int varType = s->varType;
 		int scope = s->scope;
-		printf("Assign: varName %s Type %d\n",varName,varType);
+		printf("Info: Assign: varName %s Type %d, Scope %d, operandsScope %d, compareScopes %d\n",varName,varType,scope,operandsScope,compareScopes(scope,operandsScope));
 		if(varType != valType || compareScopes(scope,operandsScope)==-1)
 		{
+			//printf("varName %s, scope %d, operandsScope %d\n",varName,scope,operandsScope);
 			s->hasValue = 0;
-			yyerror("Not equal val and type values OR Invalid Scope\n");
+			printf("Error: Not equal val and type values OR Invalid Scope\n");
 			return;
 		}
 		s->hasValue = 1;
@@ -116,7 +117,7 @@ void assign(char* varName, int valType, int operandsScope)
 	}
 	else //The variable was not declared before
 	{
-		yyerror("Variable Not declared before");
+		printf("Error: Variable Not declared before\n");
 	}
 }
 
@@ -133,8 +134,8 @@ int compare (int leftOpr, int rightOpr)
 		return leftOpr;
 	else
 	{
-		printf ("Incompatible types: leftOpr %d\t\trightOpr %d\t\t\n",leftOpr,rightOpr);
-		yyerror("incompatible types");
+		printf ("Error: Incompatible types: leftOpr %d\t\trightOpr %d\t\t\n",leftOpr,rightOpr);
+		printf("Error: incompatible types");
 		return -1;
 	}
 }
@@ -148,7 +149,7 @@ int getType(char *varName)
 	}
 	else
 	{
-		printf("Get Type: Could not find %s\n",varName);
+		printf("Error: Get Type: Could not find %s\n",varName);
 		return -1;
 	}
 }
@@ -165,7 +166,7 @@ int getTypeBoolExpr(char* varName)
 	}
 	else
 	{
-		printf("Get Type Bool Expr: Could not find %s\n",varName);
+		printf("Error: Get Type Bool Expr: Could not find %s\n",varName);
 		return -1;
 	}
 }
@@ -174,20 +175,20 @@ void boolExprValidation (int leftOprType, int rightOprType)
 {
 	if(leftOprType == -1 || rightOprType == -1)
 	{
-		yyerror("Bool Expression: An Operand is not Declared");
+		yyerror("Error: Bool Expression: An Operand is not Declared\n");
 		return;
 	}
 	if(leftOprType != rightOprType)
 	{
-		printf("Bool Expression: Invalid Operands Types left: %d\tright:%d\n",leftOprType,rightOprType);
-		yyerror("Bool Expression: Invalid Operands Types left: %d\t\t right:%d");
+		printf("Error: Bool Expression: Invalid Operands Types left: %d\tright:%d\n",leftOprType,rightOprType);
+		//printf("Error: Bool Expression: Invalid Operands Types left: %d\t\t right:%d\n");
 	}
 }
 
 void checkReturnType(int funcType, int returnType)
 {
 	if(funcType != returnType)
-		yyerror("Function Return Type Mismatch");
+		printf("Error: Function Return Type Mismatch\n");
 }
 
 int getScope(char* varName)
@@ -199,7 +200,7 @@ int getScope(char* varName)
 	}
 	else
 	{
-		yyerror("Variable not declared before");
+		printf("Error: Variable not declared before\n");
 		return -1;
 	}
 }
@@ -241,39 +242,40 @@ int compareScopes(int currVarScope, int oprVarScope)
 void openScope(int scopeCount, int *pScope)
 {
 	parent_Scope_Arr[scopeCount] = *pScope;
-	printf("Open Scope: scopeCount %d, pScope before %d",scopeCount,*pScope);
+	printf("Info: Open Scope: scopeCount %d, pScope before %d",scopeCount,*pScope);
 	*pScope = scopeCount;
 	printf(", pScope after %d\n",*pScope);
 }
 
 void closeScope(int *pScope)
 {
-	printf("Close Scope: pScope before %d,",*pScope);
+	printf("Info: Close Scope: pScope before %d,",*pScope);
 	*pScope = parent_Scope_Arr[*pScope];
 	printf(" pScope after %d\n",*pScope);
 }
 	
 void printSymbolTable()
 {
-	printf("\nVariable\tType\t\tKind\t\tHas_Value\tScope\n");
-	printf("=====================================================================\n");
+	//printf("\nVariable\tType\t\tKind\t\tHas_Value\tScope\n");
+	//printf("=====================================================================\n");
+	printf("begin symboltable\n");
 	struct Node *s;
     for(s=symbolTable; s != NULL; s=s->hh.next) 
 	{
-        printf("%s\t\t", s->id);
+        printf("%s\t", s->id);
 		switch (s->varType) 
 		{
 			case 0:
-				printf("INT\t\t");
+				printf("INT\t");
 				break;
 			case 1:
-				printf("FLOAT\t\t");
+				printf("FLOAT\t");
 				break;
 			case 2:
-				printf("CHAR\t\t");
+				printf("CHAR\t");
 				break;	
 			case 3:
-				printf("STRING\t\t");
+				printf("STRING\t");
 				break;	
 		}
 		
@@ -296,24 +298,25 @@ void printSymbolTable()
 		switch (s->hasValue)
 		{
 			case 0:
-				printf("No\t\t");
+				printf("No\t");
 				break;
 			case 1:
-				printf("Yes\t\t");
+				printf("Yes\t");
 				break;
 			case -1:
-				printf("%d\t\t",s->hasValue);
+				printf("%d\t",s->hasValue);
 				break;
 		}
 		printf("%d\n",s->scope);
     }
-	int i;
+	printf("end symboltable\n");
+	//int i;
 	/*for (i = 0; i < 7; i++)
 	{
 		printf("index %d\t\tparent %d\n",i,parent_Scope_Arr[i]);
 	}*/
 }
-
+  
 
 Stack* newStack(int size){
   /* NYI: better error checks */
@@ -326,27 +329,27 @@ Stack* newStack(int size){
  
   stack->counter = 0;
   stack->max = size;
-  printf("Stack created successfully\n");
+  //printf("Success: Stack created successfully\n");
   return stack;
 }
  
 void push(void* item, Stack* stack)
 {
-  printf("In Push\n");		
+  //printf("Info: In Push\n");		
   stack->container[stack->counter] = item;
   stack->counter++;
-  printf("Stack: Pushed Value %d\n",*(int*)item);
+  //printf("Info: Stack: Pushed Value %d\n",*(int*)item);
 }
  
 void* pop(Stack* stack)
 {
   if (stack->counter > 0)
   {
-	printf("In Pop\n");
+	//printf("Info: In Pop\n");
     stack->counter--;
-	printf("Stack: Popped Value %d\n",*(int*)(stack->container[stack->counter]));
+	//printf("Info: Stack: Popped Value %d\n",*(int*)(stack->container[stack->counter]));
     return stack->container[stack->counter];
   }
-  fprintf(stderr, "stack counter is 0... can't pop an empty stack.");
+  
   return NULL;
 }

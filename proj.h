@@ -1,6 +1,7 @@
 #include <stdbool.h>
+static int active = 1;
 typedef enum { typeCon, typeId, typeOpr } nodeEnum;
-
+  
 /* constants */
 typedef struct {
 	bool isChar;
@@ -18,7 +19,7 @@ typedef struct {
 typedef struct {
     int oper;                   /* operator */
     int nops;                   /* number of operands */
-    struct nodeTypeTag *op[1];	/* operands, extended at runtime */
+    struct nodeTypeTag *op[4];	/* operands, extended at runtime */
 } oprNodeType;
 
 typedef struct nodeTypeTag {

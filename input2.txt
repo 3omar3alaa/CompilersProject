@@ -1,7 +1,18 @@
 int main()
 {
-	int x = 3 + a;
-	
-	
+	int x = 3;
+	int y = 5;
+	if(x == 5)
+	{
+		int q = 9;
+	}
+	if (x == 5)
+	{
+		if(y == 6)
+		{
+			int u = 5 + q;
+		}
+	}
+	u = 7;
 	return 0;
 }
