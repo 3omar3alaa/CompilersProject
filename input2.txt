@@ -1,7 +1,11 @@
 int main()
 {
+	const int omar = 15;
+	omar = 60;
 	int x = 3;
 	int y = 5;
+	int x = 50;
+	x = 6.9;
 	if(x == 5)
 	{
 		int q = 9;
@@ -10,9 +14,13 @@ int main()
 	{
 		if(y == 6)
 		{
-			int u = 5 + q;
+			int u = 5;
+			if(u == 5)
+			{
+				int z = 7 + u;
+			}
 		}
 	}
-	u = 7;
+	
 	return 0;
 }

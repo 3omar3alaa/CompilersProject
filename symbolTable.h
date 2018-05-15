@@ -32,10 +32,11 @@ int getTypeBoolExpr(char* varName);	//returns the type of a variable inside a bo
 struct Node *find_Var(char* varName);
 int compare (int leftOpr, int rightOpr);
 void openScope(int scopeCount, int *pScope);
+int checkParentScope(int currVarScope, int pScope);
 void checkReturnType(int funcType, int returnType);
 int compareScopes(int currVarScope, int oprVarScope);
-void assign(char* varName, int valType, int operandsScope);
 void boolExprValidation (int leftOprType, int rightOprType);
+void assign(char* varName, int valType, int operandsScope, int pScope);
 void declare(char* varName, int varType, int valType, int varKind, int scope, int operandsScope); 
 void addVariable (char* varName, int varType, int valType, int varKind, int scope, int operandsScope);
 
@@ -50,10 +51,10 @@ void addVariable (char* varName, int varType, int valType, int varKind, int scop
 {
 	if (varType == valType || valType == -1) //if its type and value are equal then add it OR declared with no assignment
 	{
-		if( (varKind == 0 && compareScopes(scope,operandsScope) != -1) || varKind != 0) //scopes are matching OR anything but variable, then add directly to the symbol table
+		if( (varKind == 0 && checkParentScope(operandsScope,scope) != -1) || varKind != 0) //scopes are matching OR anything but variable, then add directly to the symbol table
 		{
 			struct Node *s;
-			printf("Info: varName %s, varType %d, varKind %d\n",varName,varType,varKind);
+			//printf("Info: varName %s, varType %d, varKind %d\n",varName,varType,varKind);
 			s = malloc(sizeof(struct Node));
 			s->id = varName;
 			s->varType = varType;
@@ -68,12 +69,12 @@ void addVariable (char* varName, int varType, int valType, int varKind, int scop
 		}
 		else
 		{
-			printf("Error: Invalid Scope\n");
+			printf("\nError: %s is Declared in Invalid Scope\n",varName);
 		}
 	}
 	else
 	{
-		printf("Error: Invalid Type\n");
+		printf("\nError: Type Mismatch in Declaring Variable %s\n",varName);
 	}
 }
 
@@ -92,32 +93,49 @@ void declare(char* varName, int varType, int valType, int varKind, int scope, in
 		}
 		else //if the variable is already declared in the same scope then print error
 		{
-			printf("Error: Multiple Declaration\n");
+			printf("\nError: Multiple Declaration Of Variable %s\n",varName);
 		}
 	}
 }
 
-void assign(char* varName, int valType, int operandsScope)
+void assign(char* varName, int valType, int operandsScope, int pScope)
 {
+	//Must check that s->Scope is a parent of pScope before assigning 
 	struct Node *s = find_Var(varName);
 	if(s != NULL) //the variable was already declared before
 	{
 		int varType = s->varType;
 		int scope = s->scope;
-		printf("Info: Assign: varName %s Type %d, Scope %d, operandsScope %d, compareScopes %d\n",varName,varType,scope,operandsScope,compareScopes(scope,operandsScope));
-		if(varType != valType || compareScopes(scope,operandsScope)==-1)
+		if(checkParentScope(scope,pScope)!= -1 && (s-> varKind == 0 || s-> varKind == 3))
 		{
-			//printf("varName %s, scope %d, operandsScope %d\n",varName,scope,operandsScope);
-			s->hasValue = 0;
-			printf("Error: Not equal val and type values OR Invalid Scope\n");
-			return;
+			//printf("Info: Assign: varName %s Type %d, Scope %d, operandsScope %d, compareScopes %d\n",varName,varType,scope,operandsScope,compareScopes(scope,operandsScope));
+			if(varType != valType || compareScopes(scope,operandsScope)==-1)
+			{
+				//printf("varName %s, scope %d, operandsScope %d\n",varName,scope,operandsScope);
+				s->hasValue = 0;
+				printf("\nError: Not equal val and type values OR Invalid Scope\n");
+				return;
+			}
+			s->hasValue = 1;
+			printSymbolTable();
 		}
-		s->hasValue = 1;
-		printSymbolTable();
+		else
+		{
+			if(s-> varKind != 0 && s-> varKind != 3)
+			{
+				printf("\nError: Invalid Assignment for %s\n", varName);
+				return;
+			}
+			else if (varType != valType)
+			{
+				printf("\nError: Type Mismatch in Assigning Variable %s\n",varName);
+			}
+			printf("\nError: Variable Assigned %s in Invalid Scope\n",varName);
+		}
 	}
 	else //The variable was not declared before
 	{
-		printf("Error: Variable Not declared before\n");
+		printf("\nError: Variable Not declared before\n");
 	}
 }
 
@@ -135,7 +153,7 @@ int compare (int leftOpr, int rightOpr)
 	else
 	{
 		printf ("Error: Incompatible types: leftOpr %d\t\trightOpr %d\t\t\n",leftOpr,rightOpr);
-		printf("Error: incompatible types");
+		printf("\nError: incompatible types");
 		return -1;
 	}
 }
@@ -149,7 +167,7 @@ int getType(char *varName)
 	}
 	else
 	{
-		printf("Error: Get Type: Could not find %s\n",varName);
+		printf("\nError: Get Type: Could not find %s\n",varName);
 		return -1;
 	}
 }
@@ -166,7 +184,7 @@ int getTypeBoolExpr(char* varName)
 	}
 	else
 	{
-		printf("Error: Get Type Bool Expr: Could not find %s\n",varName);
+		printf("\nError: Get Type Bool Expr: Could not find %s\n",varName);
 		return -1;
 	}
 }
@@ -180,15 +198,15 @@ void boolExprValidation (int leftOprType, int rightOprType)
 	}
 	if(leftOprType != rightOprType)
 	{
-		printf("Error: Bool Expression: Invalid Operands Types left: %d\tright:%d\n",leftOprType,rightOprType);
-		//printf("Error: Bool Expression: Invalid Operands Types left: %d\t\t right:%d\n");
+		printf("\nError: Bool Expression: Invalid Operands Types left: %d\tright:%d\n",leftOprType,rightOprType);
+		//printf("\nError: Bool Expression: Invalid Operands Types left: %d\t\t right:%d\n");
 	}
 }
 
 void checkReturnType(int funcType, int returnType)
 {
 	if(funcType != returnType)
-		printf("Error: Function Return Type Mismatch\n");
+		printf("\nError: Function Return Type Mismatch\n");
 }
 
 int getScope(char* varName)
@@ -200,7 +218,7 @@ int getScope(char* varName)
 	}
 	else
 	{
-		printf("Error: Variable not declared before\n");
+		printf("\nError: Variable not declared before\n");
 		return -1;
 	}
 }
@@ -239,43 +257,63 @@ int compareScopes(int currVarScope, int oprVarScope)
 	}
 }
 
+int checkParentScope(int currVarScope, int pScope)
+{
+	if(currVarScope == pScope)
+		return currVarScope;
+	else if (currVarScope > pScope) //assign is outside the variables scope
+		return -1;
+	else //if pScope > currVarScope => check that currVarScope is a parent to  pScope
+	{
+		int i = pScope;
+		while (i != 0 && i != currVarScope)
+		{
+			i = parent_Scope_Arr[i];
+		}
+		if(i == currVarScope)
+			return pScope;
+		else
+			return -1;
+	}
+}
+
 void openScope(int scopeCount, int *pScope)
 {
 	parent_Scope_Arr[scopeCount] = *pScope;
-	printf("Info: Open Scope: scopeCount %d, pScope before %d",scopeCount,*pScope);
+	//printf("Info: Open Scope: scopeCount %d, pScope before %d",scopeCount,*pScope);
 	*pScope = scopeCount;
-	printf(", pScope after %d\n",*pScope);
+	//printf(", pScope after %d\n",*pScope);
 }
 
 void closeScope(int *pScope)
 {
-	printf("Info: Close Scope: pScope before %d,",*pScope);
+	//printf("Info: Close Scope: pScope before %d,",*pScope);
 	*pScope = parent_Scope_Arr[*pScope];
-	printf(" pScope after %d\n",*pScope);
+	//printf(" pScope after %d\n",*pScope);
 }
 	
 void printSymbolTable()
 {
-	//printf("\nVariable\tType\t\tKind\t\tHas_Value\tScope\n");
-	//printf("=====================================================================\n");
-	printf("begin symboltable\n");
+	printf("\nVariable\tType\t\tKind\t\tHas_Value\tScope\n");
+	printf("=====================================================================\n");
+	//printf("begin symboltable\n");
 	struct Node *s;
     for(s=symbolTable; s != NULL; s=s->hh.next) 
 	{
-        printf("%s\t", s->id);
+        printf("%s\t\t", s->id);
 		switch (s->varType) 
 		{
 			case 0:
-				printf("INT\t");
+				printf("INT\t\t");
 				break;
 			case 1:
-				printf("FLOAT\t");
+				printf("FLOAT\t\t");
 				break;
 			case 2:
-				printf("CHAR\t");
+				printf("CHAR\t\t");
 				break;	
 			case 3:
-				printf("STRING\t");
+				printf("STRING\t\t");
 				break;	
 		}
 		
@@ -298,18 +336,18 @@ void printSymbolTable()
 		switch (s->hasValue)
 		{
 			case 0:
-				printf("No\t");
+				printf("No\t\t");
 				break;
 			case 1:
-				printf("Yes\t");
+				printf("Yes\t\t");
 				break;
 			case -1:
-				printf("%d\t",s->hasValue);
+				printf("%d\t\t",s->hasValue);
 				break;
 		}
 		printf("%d\n",s->scope);
     }
-	printf("end symboltable\n");
+	//printf("end symboltable\n");
 	//int i;
 	/*for (i = 0; i < 7; i++)
 	{

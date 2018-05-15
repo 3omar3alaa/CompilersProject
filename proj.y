@@ -69,135 +69,135 @@ int ex(nodeType *p);
 %%
 
 program:
-        function                { exit(0); }
+        function                																	{ exit(0); }
         ;
 
 function:
-          function func         	{ printf("Function: \n"); ex($2); freeNode ($2); }
-        | /* NULL means epsilon */ 	{printf("Function: NULL\n");}
+          function func         																	{ ex($2); freeNode ($2); }
+        | /* NULL means epsilon */ 																	{ printf("");}
         ;
 
 func:
-          types { funcType = varType; } VARIABLE openScope {oprTypeStack = newStack(100); oprScopeStack = newStack(100); } params ')' '{' { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ printf("Func\n"); varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); checkReturnType(funcType, oprVarType); $$=opr(FUNC, 2, id($3), $10); }
+          types { funcType = varType; } VARIABLE openScope {oprTypeStack = newStack(100); oprScopeStack = newStack(100); } params ')' '{' { func_scope = scopeCount; } func_body RETURN expr ';' closeScope		{ varKind = FUNCTION; declare($3,funcType,-1,varKind,func_scope, currVarScope); checkReturnType(funcType, oprVarType); $$=opr(FUNC, 2, id($3), $10); }
         ;
 openScope:
-		 '{' 																				{ scopeCount++; printf("Scope Opened %d\n",scopeCount); openScope(scopeCount, &pScope);}
-		|'(' 																				{ scopeCount++; printf("Scope Opened %d\n",scopeCount); openScope(scopeCount, &pScope);}
+		 '{' 																						{ scopeCount++; openScope(scopeCount, &pScope);}
+		|'(' 																						{ scopeCount++; openScope(scopeCount, &pScope);}
 		;
 		
 closeScope:
-         '}'                                                                                { printf("Scope Closed %d\n",scopeCount); closeScope(&pScope);}
+         '}'                                                                                		{ closeScope(&pScope);}
         ; 
 params:
-		  types VARIABLE ',' params															{ printf("Params\n"); varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
-		| types VARIABLE																	{ printf("Params\n"); varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
-		|																					{ printf("Params: empty\n"); }
+		  types VARIABLE ',' params																	{ varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
+		| types VARIABLE																			{ varKind = PARAMETER; declare($2,varType,-1, varKind, pScope, currVarScope); }
+		|																							{ printf(""); }
 		;
         
 func_call_params:
-          VARIABLE ',' func_call_params                                                     { printf("Func_Call_Params: Variable\n"); }
-        | VARIABLE                                                                          { printf("Func_Call_Params: Variable only\n"); }
-        | values ',' func_call_params                                                       { printf("Func_Call_Params: Values\n"); }
-        | values                                                                            { printf("Func_Call_Params: Values only\n"); }
-        |                                                                                   { printf("Func_Call_Params: empty\n"); }
-        |error {printf("Error: Incorrect function call parameters.\n");}
+          VARIABLE ',' func_call_params                                                     		{ printf(""); }
+        | VARIABLE                                                                          		{ printf(""); }
+        | values ',' func_call_params                                                       		{ printf(""); }
+        | values                                                                            		{ printf(""); }
+        |                                                                                   		{ printf(""); }
+        |error {printf("\nError: Incorrect function call parameters.\n");}
 		; 
         
 func_body:
-        stmt  func_body                                                              	    { $$=opr(FUNCBODY, 2, $1, $2);}
-        |                                                                                   { $$=NULL; printf("Func_Body: empty\n"); }
+        stmt  func_body                                                              	    		{ $$=opr(FUNCBODY, 2, $1, $2);}
+        |                                                                                   		{ $$=NULL; }
         ;         
 stmt:   
-          ';'                                                                               { $$ = opr(';', 2, NULL, NULL);}
-        | expr ';'                                                                          { $$ = $1; printf("In expr\n");}
-        | PRINT expr ';'                                                                    { $$ = opr(PRINT, 1, $2);}
-        | PRINT error ';'																	{ printf("Error: You cannot print empty text.\n"); active = 0;}
-		| VARIABLE '=' expr ';'                                                             { $$ = opr('=', 2, id($1), $3); varKind = VAR; assign($1, oprVarType, oprVarScope);}
-        | types VARIABLE ';'                                                                { $$ = opr(INIT, 1, id($2)); varKind = VAR; declare($2,varType,-1, varKind, pScope, oprVarScope);}
-        | error VARIABLE ';' 																{ printf("Error: Incorrect data type. Skipping statement ...\n"); active = 0;}
-		| types VARIABLE '=' expr ';'                                                       { $$ = opr(INIT, 2, id($2), $4); varKind = VAR; declare($2,varType,oprVarType,varKind, pScope, oprVarScope);}
-        | error VARIABLE '=' expr ';' 														{ printf("Error: Incorrect data type. Skipping statement ...\n"); active = 0;}
-		| CONST types VARIABLE '=' values ';'                                               { $$ = opr(INIT, 2, id($3), $5); printf("Stmt: CONST VARIABLE\n"); varKind = CONSTANT; declare($3,varType,oprVarType,varKind, pScope, oprVarScope);}
-        | VARIABLE '(' func_call_params ')'                                                 { $$ = opr(CALL, 1, id($1)); printf("Expr: Function Call Params\n"); }
-        | types VARIABLE '=' VARIABLE '(' func_call_params ')'                              { $$ = opr(CALL, 1, id($4)); printf("Expr: Function Call Params\n"); }
-        | VARIABLE '=' VARIABLE '(' func_call_params ')'                                    { $$ = opr(CALL, 1, id($3)); printf("Expr: Function Call Params\n"); }
-        | WHILE '(' bool_expr ')' openScope itr_stmt closeScope                             { $$ = opr(WHILE, 2, $3, $6); }
-        | WHILE error openScope itr_stmt closeScope 										{ printf("Error: Incorrect while intialization.\n");}
-		| WHILE '(' bool_expr ')' openScope error closeScope 								{ printf("Error: Incorrect while body.\n");}
-		| WHILE error openScope error closeScope											{ printf("Error: Incorrect while syntax.\n");}
-		| DO openScope itr_stmt '}' WHILE '(' bool_expr ')'                          	    { $$ = opr(DO, 2, $3, $7); }
-        | DO openScope error closeScope WHILE '(' bool_expr ')'								{ printf("Error: Incorrect do body.\n");}	
-		| IF '(' bool_expr ')' openScope itr_stmt closeScope if_stmt                        { $$ = opr(IF, 3, $3, $6, $8); printf("Stmt: IF \n"); }
-        | IF '(' bool_expr ')' openScope error closeScope if_stmt 							{ printf("Error: Incorrect If statement body.\n"); active = 0;}
-        | IF error openScope itr_stmt closeScope if_stmt 									{ printf("Error: Please provide a correct if condition.\n");}
-		| IF error openScope error closeScope if_stmt										{ printf("Error: Incorrect if syntax.\n");}
-		| FOR VARIABLE IN '(' INTEGER ',' INTEGER ')' openScope itr_stmt closeScope         { $$ = opr(FOR, 4, id($2), con($5), con($7), $10); assign($2, 0, oprVarScope);}
-        | FOR error openScope itr_stmt closeScope 											{ printf("Error: Incorrect for intialization.\n");}
-		| FOR error openScope error closeScope 												{ printf("Error: Incorrect for syntax.\n");}			
+          ';'                                                                              			{ $$ = opr(';', 2, NULL, NULL);}
+        | expr ';'                                                                          		{ $$ = $1; printf("In expr\n");}
+        | PRINT expr ';'                                                                    		{ $$ = opr(PRINT, 1, $2);}
+        | PRINT error ';'																			{ printf("\nError: You cannot print empty text.\n"); active = 0;}
+		| VARIABLE '=' expr ';'                                                             		{ $$ = opr('=', 2, id($1), $3); varKind = VAR; assign($1, oprVarType, oprVarScope, pScope);}
+        | types VARIABLE ';'                                                                		{ $$ = opr(INIT, 1, id($2)); varKind = VAR; declare($2,varType,-1, varKind, pScope, oprVarScope);}
+        | error VARIABLE ';' 																		{ printf("\nError: Incorrect data type. Skipping statement ...\n"); active = 0;}
+		| types VARIABLE '=' expr ';'                                                       		{ $$ = opr(INIT, 2, id($2), $4); varKind = VAR; declare($2,varType,oprVarType,varKind, pScope, oprVarScope);}
+        | error VARIABLE '=' expr ';' 																{ printf("\nError: Incorrect data type. Skipping statement ...\n"); active = 0;}
+		| CONST types VARIABLE '=' values ';'                                               		{ $$ = opr(INIT, 2, id($3), $5); varKind = CONSTANT; declare($3,varType,oprVarType,varKind, pScope, oprVarScope);}
+        | VARIABLE '(' func_call_params ')'                                                			{ $$ = opr(CALL, 1, id($1)); printf("Expr: Function Call Params\n"); }
+        | types VARIABLE '=' VARIABLE '(' func_call_params ')'                             			{ $$ = opr(CALL, 1, id($4)); printf("Expr: Function Call Params\n"); }
+        | VARIABLE '=' VARIABLE '(' func_call_params ')'                                    		{ $$ = opr(CALL, 1, id($3)); printf("Expr: Function Call Params\n"); }
+        | WHILE '(' bool_expr ')' openScope itr_stmt closeScope                            			{ $$ = opr(WHILE, 2, $3, $6); }
+        | WHILE error openScope itr_stmt closeScope 												{ printf("\nError: Incorrect while intialization.\n");}
+		| WHILE '(' bool_expr ')' openScope error closeScope 										{ printf("\nError: Incorrect while body.\n");}
+		| WHILE error openScope error closeScope													{ printf("\nError: Incorrect while syntax.\n");}
+		| DO openScope itr_stmt '}' WHILE '(' bool_expr ')'                          	    		{ $$ = opr(DO, 2, $3, $7); }
+        | DO openScope error closeScope WHILE '(' bool_expr ')'										{ printf("\nError: Incorrect do body.\n");}	
+		| IF '(' bool_expr ')' openScope itr_stmt closeScope if_stmt                        		{ $$ = opr(IF, 3, $3, $6, $8); }
+        | IF '(' bool_expr ')' openScope error closeScope if_stmt 									{ printf("\nError: Incorrect If statement body.\n"); active = 0;}
+        | IF error openScope itr_stmt closeScope if_stmt 											{ printf("\nError: Please provide a correct if condition.\n");}
+		| IF error openScope error closeScope if_stmt												{ printf("\nError: Incorrect if syntax.\n");}
+		| FOR VARIABLE IN '(' INTEGER ',' INTEGER ')' openScope itr_stmt closeScope         		{ $$ = opr(FOR, 4, id($2), con($5), con($7), $10); assign($2, 0, oprVarScope, pScope);}
+        | FOR error openScope itr_stmt closeScope 													{ printf("\nError: Incorrect for intialization.\n");}
+		| FOR error openScope error closeScope 														{ printf("\nError: Incorrect for syntax.\n");}			
 		| SWITCH '(' VARIABLE ')' openScope CASE INTEGER ':' stmt BREAK ';' switch_case closeScope  { $$ = opr(SWITCH,4,id($3),con($7),$9,$12); }
-        | SWITCH '(' VARIABLE ')' openScope error closeScope  								{ printf("Error: Incorrect switch case body.\n");}
-		| SWITCH '(' error ')' openScope CASE INTEGER ':' stmt BREAK ';' switch_case closeScope  {printf("Error: Please provide a variable for the switch.\n");}
-		| SWITCH '(' error ')' openScope error closeScope  									{ printf("Error: Wrong switch syntax.\n");}
-		| error ';' 																		{ printf("Error: Incorrect statement encountered.\n");}
+        | SWITCH '(' VARIABLE ')' openScope error closeScope  										{ printf("\nError: Incorrect switch case body.\n");}
+		| SWITCH '(' error ')' openScope CASE INTEGER ':' stmt BREAK ';' switch_case closeScope  	{ printf("\nError: Please provide a variable for the switch.\n");}
+		| SWITCH '(' error ')' openScope error closeScope  											{ printf("\nError: Wrong switch syntax.\n");}
+		| error ';' 																				{ printf("\nError: Incorrect statement encountered.\n");}
         ;
 
 if_stmt:
-        ELSE openScope itr_stmt closeScope                                                  { $$ = opr(ELSE,1,$3); }
-        | /* NULL */                                                                        { $$=NULL; }
+        ELSE openScope itr_stmt closeScope                                                  		{ $$ = opr(ELSE,1,$3); }
+        | /* NULL */                                                                        		{ $$=NULL; }
         ;
         
 itr_stmt:
-        stmt itr_stmt                                                                       { $$=opr(ITER, 2, $1, $2); }
-        | /* NULL */                                                                        { $$=NULL; }
+        stmt itr_stmt                                                                       		{ $$=opr(ITER, 2, $1, $2); }
+        | /* NULL */                                                                        		{ $$=NULL; }
         ;
     
 switch_case:
-        CASE INTEGER ':' stmt BREAK ';' switch_case                                         { $$ = opr(CASE,3,con($2),$4,$7); }
-        | /* NULL */                                                                        { $$=NULL;}     
-        | error ';' {printf("Error: Incorrect switch case syntax. Did you forget a case?\n"); active = 0;}
+        CASE INTEGER ':' stmt BREAK ';' switch_case                                         		{ $$ = opr(CASE,3,con($2),$4,$7); }
+        | /* NULL */                                                                        		{ $$=NULL;}     
+        | error ';' {printf("\nError: Incorrect switch case syntax. Did you forget a case?\n"); active = 0;}
         ;
 
 values:
-          INTEGER                                                                           { $$ = con($1); 	valType = 0; oprVarType = valType;}
-        | FLOAT                                                                             { $$ = con($1); 	valType = 1; oprVarType = valType;}
-        | CHAR                                                                              { $$ = conChar($1); valType = 2; oprVarType = valType;}
-        | STRING                                                                            { $$ = conChar($1); valType = 3; oprVarType = valType;}
+          INTEGER                                                                           		{ $$ = con($1); 	valType = 0; oprVarType = valType;}
+        | FLOAT                                                                             		{ $$ = con($1); 	valType = 1; oprVarType = valType;}
+        | CHAR                                                                              		{ $$ = conChar($1); valType = 2; oprVarType = valType;}
+        | STRING                                                                            		{ $$ = conChar($1); valType = 3; oprVarType = valType;}
         ;
         
 types:
-          INT                                                                               { varType = 0;}
-        | FLOAT                                                                             { varType = 1;}
-        | CHAR                                                                              { varType = 2;}
-        | STRING                                                                            { varType = 3;}
+          INT                                                                               		{ varType = 0;}
+        | FLOAT                                                                             		{ varType = 1;}
+        | CHAR                                                                              		{ varType = 2;}
+        | STRING                                                                            		{ varType = 3;}
         ;
         
 expr:
-          values                                                                            			{ oprVarType = valType; oprVarScope = pScope;}
-        | VARIABLE                                                                          			{ $$ = id($1); oprVarType = getType($1); oprVarScope = getScope($1);}
-        | expr '+' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('+', 2, $1, $4); }
-        | expr '-' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('-', 2, $1, $4); }
-        | expr '*' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('*', 2, $1, $4); }
-        | expr '/' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('/', 2, $1, $4); }
-        | expr '<' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('<', 2, $1, $4); }
-        | expr '>' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('>', 2, $1, $4); }
-        | expr  GE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(GE, 2, $1, $4); }
-        | expr  LE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(LE, 2, $1, $4); }
-        | expr  NE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(NE, 2, $1, $4); }
-        | expr  EQ { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr            { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(EQ, 2, $1, $4); }
+          values                                                                            		{ oprVarType = valType; oprVarScope = pScope;}
+        | VARIABLE                                                                          		{ $$ = id($1); oprVarType = getType($1); oprVarScope = getScope($1);}
+        | expr '+' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('+', 2, $1, $4); }
+        | expr '-' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('-', 2, $1, $4); }
+        | expr '*' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('*', 2, $1, $4); }
+        | expr '/' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('/', 2, $1, $4); }
+        | expr '<' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('<', 2, $1, $4); }
+        | expr '>' { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr('>', 2, $1, $4); }
+        | expr  GE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(GE, 2, $1, $4); }
+        | expr  LE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(LE, 2, $1, $4); }
+        | expr  NE { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(NE, 2, $1, $4); }
+        | expr  EQ { push(&oprVarType,oprTypeStack); push(&oprVarScope,oprScopeStack);} expr        { oprVarType = compare(*(int*)pop(oprTypeStack), oprVarType); oprVarScope = compareScopes(*(int*)pop(oprScopeStack),oprVarScope); $$ = opr(EQ, 2, $1, $4); }
         ;   
     
 bool_expr:  
-          bool_expr '<' { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType); $$ = opr('<', 2, $1, $4); }
-        | bool_expr '>' { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType); $$ = opr('>', 2, $1, $4); }
-        | bool_expr GE  { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType);  $$ = opr(GE, 2, $1, $4); }
-        | bool_expr LE  { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType);  $$ = opr(LE, 2, $1, $4); }
-        | bool_expr NE  { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType);  $$ = opr(NE, 2, $1, $4); }
-        | bool_expr EQ  { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType);  $$ = opr(EQ, 2, $1, $4); }
-        | bool_expr AND { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType); $$ = opr(AND, 2, $1, $4); }
-        | bool_expr OR  { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType);  $$ = opr(OR, 2, $1, $4); }
-        | bool_expr XOR { currBoolType = varBoolType; } bool_expr                           { boolExprValidation(currBoolType,varBoolType); $$ = opr(XOR, 2, $1, $4); } 
-        | values                                                                            { varBoolType = valType; }
-        | VARIABLE                                                                          { $$ = id($1); varBoolType = getTypeBoolExpr($1);}
+          bool_expr '<' { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType); $$ = opr('<', 2, $1, $4); }
+        | bool_expr '>' { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType); $$ = opr('>', 2, $1, $4); }
+        | bool_expr GE  { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType);  $$ = opr(GE, 2, $1, $4); }
+        | bool_expr LE  { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType);  $$ = opr(LE, 2, $1, $4); }
+        | bool_expr NE  { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType);  $$ = opr(NE, 2, $1, $4); }
+        | bool_expr EQ  { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType);  $$ = opr(EQ, 2, $1, $4); }
+        | bool_expr AND { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType); $$ = opr(AND, 2, $1, $4); }
+        | bool_expr OR  { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType);  $$ = opr(OR, 2, $1, $4); }
+        | bool_expr XOR { currBoolType = varBoolType; } bool_expr                           		{ boolExprValidation(currBoolType,varBoolType); $$ = opr(XOR, 2, $1, $4); } 
+        | values                                                                            		{ varBoolType = valType; }
+        | VARIABLE                                                                          		{ $$ = id($1); varBoolType = getTypeBoolExpr($1);}
         ;
 %%
  

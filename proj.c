@@ -38,7 +38,7 @@ int ex(nodeType *p) {
 			}
 			break;
 		case FUNC:
-			printf("Proc\t%s\n",p->opr.op[0]->id.name);
+			printf("\nProc\t%s\n",p->opr.op[0]->id.name);
 			ex(p->opr.op[1]);
 			printf("Ret\n");
 			break;
